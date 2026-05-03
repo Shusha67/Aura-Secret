@@ -241,6 +241,44 @@
       box-shadow: 0 0 0 3px var(--accent-glow);
     }
 
+    input.is-invalid {
+      border-color: rgba(248, 113, 113, 0.65) !important;
+      background: rgba(248, 113, 113, 0.05) !important;
+      box-shadow: 0 0 0 3px rgba(248, 113, 113, 0.2) !important;
+    }
+
+    .field-error {
+      display: none;
+      font-size: 0.775rem;
+      color: var(--error);
+      margin-top: 6px;
+      padding-left: 2px;
+    }
+
+    .field-error.visible { display: block; }
+
+    .form-error-banner {
+      display: none;
+      align-items: center;
+      gap: 10px;
+      background: rgba(248, 113, 113, 0.1);
+      border: 1px solid rgba(248, 113, 113, 0.28);
+      border-radius: var(--radius-input);
+      padding: 11px 14px;
+      font-size: 0.845rem;
+      color: var(--error);
+      margin-bottom: 20px;
+      line-height: 1.4;
+    }
+
+    .form-error-banner.visible { display: flex; }
+
+    .form-error-banner svg {
+      flex-shrink: 0;
+      width: 16px;
+      height: 16px;
+    }
+
     .input-wrapper:focus-within .input-icon {
       color: var(--accent);
     }
@@ -467,6 +505,17 @@
     <!-- Login Form -->
     <form id="loginForm" novalidate>
 
+      <!-- Global error banner -->
+      <div class="form-error-banner" id="errorBanner" role="alert" aria-live="polite">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="12" y1="8" x2="12" y2="12"/>
+          <line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+        <span id="errorBannerText"></span>
+      </div>
+
       <!-- Username -->
       <div class="form-group">
         <label for="username">Username</label>
@@ -487,8 +536,10 @@
             spellcheck="false"
             required
             aria-required="true"
+            aria-describedby="usernameError"
           />
         </div>
+        <span class="field-error" id="usernameError">Username is required.</span>
       </div>
 
       <!-- Password -->
@@ -509,6 +560,7 @@
             autocomplete="current-password"
             required
             aria-required="true"
+            aria-describedby="passwordError"
           />
           <button
             type="button"
@@ -516,7 +568,6 @@
             aria-label="Toggle password visibility"
             onclick="togglePassword()"
           >
-            <!-- Eye icon -->
             <svg id="eyeIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                  stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
@@ -524,6 +575,7 @@
             </svg>
           </button>
         </div>
+        <span class="field-error" id="passwordError">Password is required.</span>
       </div>
 
       <!-- Remember + Forgot -->
@@ -564,35 +616,90 @@
   </footer>
 
   <script>
-    // Password visibility toggle
+    // ── Password visibility toggle ────────────────────────────────────
     function togglePassword() {
       const input = document.getElementById('password');
       const icon  = document.getElementById('eyeIcon');
       const isHidden = input.type === 'password';
-
       input.type = isHidden ? 'text' : 'password';
-
-      // Swap between eye / eye-off SVG paths
       icon.innerHTML = isHidden
-        ? /* eye-off */
-          `<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
+        ? `<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
            <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
            <line x1="1" y1="1" x2="23" y2="23"/>`
-        : /* eye */
-          `<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+        : `<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
            <circle cx="12" cy="12" r="3"/>`;
     }
 
-    // Demo form handler — prevents real submission
+    // ── Validation helpers ────────────────────────────────────────────
+    function setFieldError(inputId, errorId, message) {
+      const input = document.getElementById(inputId);
+      const error = document.getElementById(errorId);
+      if (message) {
+        input.classList.add('is-invalid');
+        error.textContent = message;
+        error.classList.add('visible');
+      } else {
+        input.classList.remove('is-invalid');
+        error.classList.remove('visible');
+      }
+    }
+
+    function clearErrors() {
+      setFieldError('username', 'usernameError', null);
+      setFieldError('password', 'passwordError', null);
+      const banner = document.getElementById('errorBanner');
+      banner.classList.remove('visible');
+    }
+
+    function showBanner(message) {
+      const banner = document.getElementById('errorBanner');
+      document.getElementById('errorBannerText').textContent = message;
+      banner.classList.add('visible');
+    }
+
+    // Clear field error as soon as the user starts typing again
+    ['username', 'password'].forEach(id => {
+      document.getElementById(id).addEventListener('input', () => {
+        const errorId = id + 'Error';
+        setFieldError(id, errorId, null);
+        document.getElementById('errorBanner').classList.remove('visible');
+      });
+    });
+
+    // ── Form submission ───────────────────────────────────────────────
     document.getElementById('loginForm').addEventListener('submit', function (e) {
       e.preventDefault();
+      clearErrors();
+
+      const username = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value;
+      let valid = true;
+
+      if (!username) {
+        setFieldError('username', 'usernameError', 'Username is required.');
+        valid = false;
+      }
+
+      if (!password) {
+        setFieldError('password', 'passwordError', 'Password is required.');
+        valid = false;
+      }
+
+      if (!valid) {
+        showBanner('Please fill in all required fields before signing in.');
+        return;
+      }
+
+      // Simulate an async authentication check
       const btn = this.querySelector('.btn-login');
       btn.textContent = 'Authenticating…';
       btn.disabled = true;
+
       setTimeout(() => {
-        btn.textContent = 'Sign In';
-        btn.disabled = false;
-      }, 1800);
+        // Store the username so the dashboard can greet the user
+        sessionStorage.setItem('av_user', username);
+        window.location.href = 'dashboard.html';
+      }, 1200);
     });
   </script>
 

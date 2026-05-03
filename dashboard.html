@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AuraVault — Dashboard</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg-start:    #040d21;
+      --bg-mid:      #071530;
+      --bg-end:      #0a1f4a;
+      --surface:     rgba(10, 22, 55, 0.78);
+      --border:      rgba(99, 179, 237, 0.12);
+      --accent:      #3b82f6;
+      --accent-2:    #6366f1;
+      --green:       #34d399;
+      --red:         #f87171;
+      --yellow:      #fbbf24;
+      --text:        #e8edf5;
+      --muted:       #7a8cad;
+      --radius:      14px;
+      --transition:  0.2s ease;
+    }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: linear-gradient(135deg, var(--bg-start) 0%, var(--bg-mid) 50%, var(--bg-end) 100%);
+      min-height: 100vh;
+      color: var(--text);
+    }
+
+    /* ── Nav ──────────────────────────────────────────────────────── */
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 32px;
+      height: 60px;
+      background: rgba(4, 13, 33, 0.88);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .nav-brand {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--text);
+      text-decoration: none;
+    }
+
+    .nav-brand-icon {
+      width: 30px;
+      height: 30px;
+      background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .nav-brand-icon svg { width: 15px; height: 15px; fill: #fff; }
+    .nav-brand span { color: var(--accent); }
+
+    .nav-right {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .nav-user {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      font-size: 0.875rem;
+      color: var(--muted);
+    }
+
+    .avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: #fff;
+      flex-shrink: 0;
+    }
+
+    .btn-logout {
+      background: rgba(248, 113, 113, 0.1);
+      border: 1px solid rgba(248, 113, 113, 0.25);
+      border-radius: 8px;
+      color: var(--red);
+      font-size: 0.8rem;
+      font-weight: 600;
+      padding: 6px 14px;
+      cursor: pointer;
+      transition: background var(--transition), border-color var(--transition);
+    }
+
+    .btn-logout:hover {
+      background: rgba(248, 113, 113, 0.18);
+      border-color: rgba(248, 113, 113, 0.45);
+    }
+
+    /* ── Page layout ──────────────────────────────────────────────── */
+    main {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 36px 24px 60px;
+    }
+
+    .page-header {
+      margin-bottom: 32px;
+    }
+
+    .page-header h1 {
+      font-size: 1.6rem;
+      font-weight: 700;
+      letter-spacing: -0.4px;
+      margin-bottom: 4px;
+    }
+
+    .page-header p {
+      font-size: 0.875rem;
+      color: var(--muted);
+    }
+
+    /* ── Stat cards ───────────────────────────────────────────────── */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 22px 24px;
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      box-shadow: 0 2px 16px rgba(0,0,0,0.3);
+    }
+
+    .stat-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--muted);
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .stat-label svg { width: 13px; height: 13px; }
+
+    .stat-value {
+      font-size: 1.75rem;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      margin-bottom: 6px;
+    }
+
+    .stat-change {
+      font-size: 0.78rem;
+      font-weight: 500;
+    }
+
+    .up   { color: var(--green); }
+    .down { color: var(--red); }
+
+    /* ── Two-column section ───────────────────────────────────────── */
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    @media (max-width: 700px) {
+      .two-col { grid-template-columns: 1fr; }
+    }
+
+    /* ── Panel ────────────────────────────────────────────────────── */
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      box-shadow: 0 2px 16px rgba(0,0,0,0.3);
+      overflow: hidden;
+    }
+
+    .panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 18px 22px 14px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .panel-title {
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .panel-badge {
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: var(--muted);
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 2px 10px;
+    }
+
+    /* ── Transaction list ─────────────────────────────────────────── */
+    .tx-list { list-style: none; }
+
+    .tx-item {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 13px 22px;
+      border-bottom: 1px solid rgba(99, 179, 237, 0.06);
+      transition: background var(--transition);
+    }
+
+    .tx-item:last-child { border-bottom: none; }
+    .tx-item:hover { background: rgba(255,255,255,0.025); }
+
+    .tx-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+      flex-shrink: 0;
+    }
+
+    .tx-info { flex: 1; min-width: 0; }
+
+    .tx-name {
+      font-size: 0.875rem;
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .tx-date {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    .tx-amount {
+      font-size: 0.9rem;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    /* ── Quick actions ────────────────────────────────────────────── */
+    .actions-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      padding: 18px;
+    }
+
+    .action-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px 10px;
+      cursor: pointer;
+      color: var(--text);
+      font-size: 0.8rem;
+      font-weight: 600;
+      transition: background var(--transition), border-color var(--transition), transform var(--transition);
+    }
+
+    .action-btn:hover {
+      background: rgba(59, 130, 246, 0.1);
+      border-color: rgba(59, 130, 246, 0.3);
+      transform: translateY(-2px);
+    }
+
+    .action-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+    }
+
+    /* ── Demo banner ──────────────────────────────────────────────── */
+    .demo-banner {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(251, 191, 36, 0.08);
+      border: 1px solid rgba(251, 191, 36, 0.22);
+      border-radius: 10px;
+      padding: 10px 16px;
+      font-size: 0.8rem;
+      color: var(--yellow);
+      margin-bottom: 28px;
+    }
+
+    /* ── Responsive nav ───────────────────────────────────────────── */
+    @media (max-width: 480px) {
+      nav { padding: 0 16px; }
+      main { padding: 24px 16px 48px; }
+      .stats-grid { grid-template-columns: 1fr 1fr; }
+      .stat-value { font-size: 1.4rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navigation -->
+  <nav>
+    <a class="nav-brand" href="dashboard.html">
+      <div class="nav-brand-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-1 14l-3-3 1.41-1.41L11 12.17l4.59-4.58L17 9l-6 6z"/>
+        </svg>
+      </div>
+      Aura<span>Vault</span>
+    </a>
+    <div class="nav-right">
+      <div class="nav-user">
+        <div class="avatar" id="avatarInitial">?</div>
+        <span id="navUsername">Loading…</span>
+      </div>
+      <button class="btn-logout" onclick="logout()">Sign out</button>
+    </div>
+  </nav>
+
+  <main>
+
+    <!-- Demo warning -->
+    <div class="demo-banner" role="status">
+      ⚠️ <strong>Demo mode</strong> — All data shown below is fictional and for display purposes only.
+    </div>
+
+    <!-- Page header -->
+    <div class="page-header">
+      <h1 id="welcomeMsg">Welcome back!</h1>
+      <p>Here's a snapshot of your account activity.</p>
+    </div>
+
+    <!-- Stat cards -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-label">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="2" y="5" width="20" height="14" rx="2"/>
+            <line x1="2" y1="10" x2="22" y2="10"/>
+          </svg>
+          Total Balance
+        </div>
+        <div class="stat-value">$24,831.50</div>
+        <div class="stat-change up">↑ +2.4% this month</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>
+            <polyline points="17 6 23 6 23 12"/>
+          </svg>
+          Monthly Income
+        </div>
+        <div class="stat-value">$6,200.00</div>
+        <div class="stat-change up">↑ +5.1% vs last month</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/>
+            <polyline points="17 18 23 18 23 12"/>
+          </svg>
+          Monthly Spend
+        </div>
+        <div class="stat-value">$1,948.30</div>
+        <div class="stat-change down">↓ −8.2% vs last month</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="10"/>
+            <polyline points="12 6 12 12 16 14"/>
+          </svg>
+          Pending
+        </div>
+        <div class="stat-value">$340.00</div>
+        <div class="stat-change" style="color:var(--yellow)">2 transactions in progress</div>
+      </div>
+    </div>
+
+    <!-- Transactions + Quick actions -->
+    <div class="two-col">
+
+      <!-- Recent transactions -->
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">Recent Transactions</span>
+          <span class="panel-badge">Last 7 days</span>
+        </div>
+        <ul class="tx-list" aria-label="Recent transactions">
+          <li class="tx-item">
+            <div class="tx-icon" style="background:rgba(52,211,153,0.12);">🛒</div>
+            <div class="tx-info">
+              <div class="tx-name">Whole Foods Market</div>
+              <div class="tx-date">Today, 10:42 AM</div>
+            </div>
+            <span class="tx-amount down">−$94.18</span>
+          </li>
+          <li class="tx-item">
+            <div class="tx-icon" style="background:rgba(59,130,246,0.12);">💼</div>
+            <div class="tx-info">
+              <div class="tx-name">Salary Deposit</div>
+              <div class="tx-date">Yesterday, 9:00 AM</div>
+            </div>
+            <span class="tx-amount up">+$3,100.00</span>
+          </li>
+          <li class="tx-item">
+            <div class="tx-icon" style="background:rgba(251,191,36,0.12);">⚡</div>
+            <div class="tx-info">
+              <div class="tx-name">Electric Bill</div>
+              <div class="tx-date">May 1, 8:15 PM</div>
+            </div>
+            <span class="tx-amount down">−$112.00</span>
+          </li>
+          <li class="tx-item">
+            <div class="tx-icon" style="background:rgba(99,102,241,0.12);">🎵</div>
+            <div class="tx-info">
+              <div class="tx-name">Streaming Service</div>
+              <div class="tx-date">Apr 30, 12:00 AM</div>
+            </div>
+            <span class="tx-amount down">−$15.99</span>
+          </li>
+          <li class="tx-item">
+            <div class="tx-icon" style="background:rgba(52,211,153,0.12);">🏠</div>
+            <div class="tx-info">
+              <div class="tx-name">Rent Received</div>
+              <div class="tx-date">Apr 29, 3:30 PM</div>
+            </div>
+            <span class="tx-amount up">+$1,200.00</span>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Quick actions -->
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">Quick Actions</span>
+        </div>
+        <div class="actions-grid">
+          <button class="action-btn" onclick="demoAction('Send Money')">
+            <div class="action-icon" style="background:rgba(59,130,246,0.15);">💸</div>
+            Send Money
+          </button>
+          <button class="action-btn" onclick="demoAction('Add Funds')">
+            <div class="action-icon" style="background:rgba(52,211,153,0.15);">➕</div>
+            Add Funds
+          </button>
+          <button class="action-btn" onclick="demoAction('Pay Bills')">
+            <div class="action-icon" style="background:rgba(251,191,36,0.15);">🧾</div>
+            Pay Bills
+          </button>
+          <button class="action-btn" onclick="demoAction('View Statements')">
+            <div class="action-icon" style="background:rgba(99,102,241,0.15);">📄</div>
+            Statements
+          </button>
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <script>
+    // ── Greet the user from sessionStorage ───────────────────────────
+    (function () {
+      const user = sessionStorage.getItem('av_user');
+      if (!user) {
+        // Not logged in — send back to login page
+        window.location.href = 'login.html';
+        return;
+      }
+      const display = user.charAt(0).toUpperCase() + user.slice(1);
+      document.getElementById('welcomeMsg').textContent = 'Welcome back, ' + display + '!';
+      document.getElementById('navUsername').textContent = display;
+      document.getElementById('avatarInitial').textContent = user.charAt(0).toUpperCase();
+    })();
+
+    // ── Logout ────────────────────────────────────────────────────────
+    function logout() {
+      sessionStorage.removeItem('av_user');
+      window.location.href = 'login.html';
+    }
+
+    // ── Demo action stub ──────────────────────────────────────────────
+    function demoAction(name) {
+      const banner = document.querySelector('.demo-banner');
+      banner.textContent = '⚠️ "' + name + '" is not available in demo mode.';
+      setTimeout(() => {
+        banner.innerHTML = '⚠️ <strong>Demo mode</strong> — All data shown below is fictional and for display purposes only.';
+      }, 3000);
+    }
+  </script>
+
+</body>
+</html>
