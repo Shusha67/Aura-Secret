@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AuraVault — Secure Login</title>
+  <style>
+    /* ─── Reset & Base ─────────────────────────────────────────────── */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --bg-start:      #040d21;
+      --bg-mid:        #071530;
+      --bg-end:        #0a1f4a;
+      --card-bg:       rgba(10, 22, 55, 0.82);
+      --card-border:   rgba(99, 179, 237, 0.12);
+      --accent:        #3b82f6;
+      --accent-hover:  #2563eb;
+      --accent-glow:   rgba(59, 130, 246, 0.45);
+      --text-primary:  #e8edf5;
+      --text-muted:    #7a8cad;
+      --input-bg:      rgba(255, 255, 255, 0.045);
+      --input-border:  rgba(99, 179, 237, 0.18);
+      --input-focus:   rgba(59, 130, 246, 0.55);
+      --error:         #f87171;
+      --success:       #34d399;
+      --radius-card:   18px;
+      --radius-input:  10px;
+      --transition:    0.22s ease;
+    }
+
+    html, body {
+      height: 100%;
+    }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: linear-gradient(135deg, var(--bg-start) 0%, var(--bg-mid) 50%, var(--bg-end) 100%);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 16px;
+      color: var(--text-primary);
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* ─── Decorative Background Orbs ──────────────────────────────── */
+    body::before,
+    body::after {
+      content: '';
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(90px);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    body::before {
+      width: 480px;
+      height: 480px;
+      background: radial-gradient(circle, rgba(59, 130, 246, 0.18) 0%, transparent 70%);
+      top: -120px;
+      right: -80px;
+    }
+
+    body::after {
+      width: 360px;
+      height: 360px;
+      background: radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, transparent 70%);
+      bottom: -100px;
+      left: -80px;
+    }
+
+    /* ─── Card ─────────────────────────────────────────────────────── */
+    .card {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 420px;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-card);
+      padding: 44px 40px 36px;
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      box-shadow:
+        0 4px 24px rgba(0, 0, 0, 0.4),
+        0 0 0 1px rgba(255, 255, 255, 0.03),
+        inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    }
+
+    /* ─── Brand ────────────────────────────────────────────────────── */
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 32px;
+    }
+
+    .brand-icon {
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      box-shadow: 0 4px 14px rgba(59, 130, 246, 0.4);
+    }
+
+    .brand-icon svg {
+      width: 20px;
+      height: 20px;
+      fill: #fff;
+    }
+
+    .brand-name {
+      font-size: 1.35rem;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+      color: var(--text-primary);
+    }
+
+    .brand-name span {
+      color: var(--accent);
+    }
+
+    /* ─── Heading ──────────────────────────────────────────────────── */
+    .card-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      letter-spacing: -0.4px;
+      margin-bottom: 6px;
+      color: var(--text-primary);
+    }
+
+    .card-subtitle {
+      font-size: 0.875rem;
+      color: var(--text-muted);
+      margin-bottom: 28px;
+      line-height: 1.5;
+    }
+
+    /* ─── Security Badge ───────────────────────────────────────────── */
+    .security-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(52, 211, 153, 0.1);
+      border: 1px solid rgba(52, 211, 153, 0.22);
+      border-radius: 20px;
+      padding: 4px 12px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--success);
+      letter-spacing: 0.4px;
+      text-transform: uppercase;
+      margin-bottom: 28px;
+    }
+
+    .security-badge::before {
+      content: '';
+      width: 6px;
+      height: 6px;
+      background: var(--success);
+      border-radius: 50%;
+      box-shadow: 0 0 6px var(--success);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.4; }
+    }
+
+    /* ─── Form ─────────────────────────────────────────────────────── */
+    .form-group {
+      margin-bottom: 18px;
+    }
+
+    label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    .input-wrapper {
+      position: relative;
+    }
+
+    .input-icon {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 16px;
+      height: 16px;
+      color: var(--text-muted);
+      pointer-events: none;
+      transition: color var(--transition);
+    }
+
+    input[type="text"],
+    input[type="password"] {
+      width: 100%;
+      background: var(--input-bg);
+      border: 1px solid var(--input-border);
+      border-radius: var(--radius-input);
+      padding: 13px 14px 13px 42px;
+      font-size: 0.95rem;
+      color: var(--text-primary);
+      outline: none;
+      transition:
+        border-color var(--transition),
+        background var(--transition),
+        box-shadow var(--transition);
+      -webkit-appearance: none;
+    }
+
+    input[type="text"]::placeholder,
+    input[type="password"]::placeholder {
+      color: rgba(122, 140, 173, 0.5);
+    }
+
+    input[type="text"]:focus,
+    input[type="password"]:focus {
+      border-color: rgba(59, 130, 246, 0.6);
+      background: rgba(59, 130, 246, 0.06);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+
+    .input-wrapper:focus-within .input-icon {
+      color: var(--accent);
+    }
+
+    /* ─── Password Toggle ──────────────────────────────────────────── */
+    .toggle-password {
+      position: absolute;
+      right: 13px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 4px;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      transition: color var(--transition);
+    }
+
+    .toggle-password:hover { color: var(--text-primary); }
+
+    .toggle-password svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    /* ─── Row: Remember + Forgot ───────────────────────────────────── */
+    .form-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 26px;
+      margin-top: 4px;
+    }
+
+    .remember-me {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .remember-me input[type="checkbox"] {
+      appearance: none;
+      -webkit-appearance: none;
+      width: 16px;
+      height: 16px;
+      border: 1px solid var(--input-border);
+      border-radius: 4px;
+      background: var(--input-bg);
+      cursor: pointer;
+      position: relative;
+      flex-shrink: 0;
+      transition: background var(--transition), border-color var(--transition);
+    }
+
+    .remember-me input[type="checkbox"]:checked {
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+
+    .remember-me input[type="checkbox"]:checked::after {
+      content: '';
+      position: absolute;
+      left: 4px;
+      top: 1px;
+      width: 5px;
+      height: 9px;
+      border: 2px solid #fff;
+      border-top: none;
+      border-left: none;
+      transform: rotate(45deg);
+    }
+
+    .remember-me span {
+      font-size: 0.825rem;
+      color: var(--text-muted);
+    }
+
+    .forgot-link {
+      font-size: 0.825rem;
+      color: var(--accent);
+      text-decoration: none;
+      font-weight: 500;
+      transition: color var(--transition), opacity var(--transition);
+    }
+
+    .forgot-link:hover {
+      color: #93c5fd;
+      text-decoration: underline;
+    }
+
+    /* ─── Submit Button ────────────────────────────────────────────── */
+    .btn-login {
+      width: 100%;
+      padding: 14px 20px;
+      background: linear-gradient(135deg, var(--accent) 0%, #6366f1 100%);
+      border: none;
+      border-radius: var(--radius-input);
+      color: #fff;
+      font-size: 0.97rem;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      transition:
+        transform var(--transition),
+        box-shadow var(--transition),
+        filter var(--transition);
+      box-shadow: 0 4px 20px rgba(59, 130, 246, 0.4);
+    }
+
+    .btn-login::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(255,255,255,0.12) 0%, transparent 60%);
+      opacity: 0;
+      transition: opacity var(--transition);
+    }
+
+    .btn-login:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 28px rgba(59, 130, 246, 0.55);
+      filter: brightness(1.08);
+    }
+
+    .btn-login:hover::before { opacity: 1; }
+
+    .btn-login:active {
+      transform: translateY(0);
+      box-shadow: 0 3px 12px rgba(59, 130, 246, 0.35);
+    }
+
+    /* ─── Divider ──────────────────────────────────────────────────── */
+    .divider {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 24px 0;
+      color: var(--text-muted);
+      font-size: 0.78rem;
+    }
+
+    .divider::before,
+    .divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--card-border);
+    }
+
+    /* ─── Sign-up Prompt ───────────────────────────────────────────── */
+    .signup-prompt {
+      text-align: center;
+      font-size: 0.845rem;
+      color: var(--text-muted);
+    }
+
+    .signup-prompt a {
+      color: var(--accent);
+      text-decoration: none;
+      font-weight: 600;
+      transition: color var(--transition);
+    }
+
+    .signup-prompt a:hover { color: #93c5fd; }
+
+    /* ─── Footer ───────────────────────────────────────────────────── */
+    footer {
+      position: relative;
+      z-index: 1;
+      margin-top: 28px;
+      text-align: center;
+      font-size: 0.75rem;
+      color: rgba(122, 140, 173, 0.55);
+      line-height: 1.6;
+    }
+
+    footer a {
+      color: rgba(122, 140, 173, 0.75);
+      text-decoration: none;
+    }
+
+    footer a:hover { color: var(--text-muted); }
+
+    /* ─── Responsive ───────────────────────────────────────────────── */
+    @media (max-width: 480px) {
+      .card {
+        padding: 32px 24px 28px;
+      }
+
+      .card-title { font-size: 1.3rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <main class="card" role="main" aria-label="Login form">
+
+    <!-- Brand -->
+    <div class="brand">
+      <div class="brand-icon" aria-hidden="true">
+        <!-- Shield icon -->
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-1 14l-3-3 1.41-1.41L11 12.17l4.59-4.58L17 9l-6 6z"/>
+        </svg>
+      </div>
+      <div class="brand-name">Aura<span>Vault</span></div>
+    </div>
+
+    <!-- Security Badge -->
+    <div class="security-badge" role="status" aria-label="Secure connection active">
+      256-bit SSL Secured
+    </div>
+
+    <!-- Heading -->
+    <h1 class="card-title">Welcome back</h1>
+    <p class="card-subtitle">Sign in to access your secure financial dashboard.</p>
+
+    <!-- Login Form -->
+    <form id="loginForm" novalidate>
+
+      <!-- Username -->
+      <div class="form-group">
+        <label for="username">Username</label>
+        <div class="input-wrapper">
+          <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+               aria-hidden="true">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+            <circle cx="12" cy="7" r="4"/>
+          </svg>
+          <input
+            type="text"
+            id="username"
+            name="username"
+            placeholder="Enter your username"
+            autocomplete="username"
+            autocapitalize="off"
+            spellcheck="false"
+            required
+            aria-required="true"
+          />
+        </div>
+      </div>
+
+      <!-- Password -->
+      <div class="form-group">
+        <label for="password">Password</label>
+        <div class="input-wrapper">
+          <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+               aria-hidden="true">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+          </svg>
+          <input
+            type="password"
+            id="password"
+            name="password"
+            placeholder="Enter your password"
+            autocomplete="current-password"
+            required
+            aria-required="true"
+          />
+          <button
+            type="button"
+            class="toggle-password"
+            aria-label="Toggle password visibility"
+            onclick="togglePassword()"
+          >
+            <!-- Eye icon -->
+            <svg id="eyeIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+              <circle cx="12" cy="12" r="3"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Remember + Forgot -->
+      <div class="form-row">
+        <label class="remember-me">
+          <input type="checkbox" id="rememberMe" name="remember" />
+          <span>Remember me</span>
+        </label>
+        <a href="#" class="forgot-link" tabindex="0">Forgot password?</a>
+      </div>
+
+      <!-- Submit -->
+      <button type="submit" class="btn-login">Sign In</button>
+
+    </form>
+
+    <!-- Divider -->
+    <div class="divider" aria-hidden="true">or</div>
+
+    <!-- Sign-up Prompt -->
+    <p class="signup-prompt">
+      Don't have an account? <a href="#">Request access</a>
+    </p>
+
+  </main>
+
+  <!-- Footer -->
+  <footer>
+    <p>
+      &copy; 2026 AuraVault &mdash;
+      <a href="#">Privacy Policy</a> &middot;
+      <a href="#">Terms of Service</a>
+    </p>
+    <p style="margin-top:4px;">
+      &#128274;&nbsp;This is a <strong>demo system</strong> for educational purposes only.
+      No real financial data is stored or processed.
+    </p>
+  </footer>
+
+  <script>
+    // Password visibility toggle
+    function togglePassword() {
+      const input = document.getElementById('password');
+      const icon  = document.getElementById('eyeIcon');
+      const isHidden = input.type === 'password';
+
+      input.type = isHidden ? 'text' : 'password';
+
+      // Swap between eye / eye-off SVG paths
+      icon.innerHTML = isHidden
+        ? /* eye-off */
+          `<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
+           <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+           <line x1="1" y1="1" x2="23" y2="23"/>`
+        : /* eye */
+          `<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+           <circle cx="12" cy="12" r="3"/>`;
+    }
+
+    // Demo form handler — prevents real submission
+    document.getElementById('loginForm').addEventListener('submit', function (e) {
+      e.preventDefault();
+      const btn = this.querySelector('.btn-login');
+      btn.textContent = 'Authenticating…';
+      btn.disabled = true;
+      setTimeout(() => {
+        btn.textContent = 'Sign In';
+        btn.disabled = false;
+      }, 1800);
+    });
+  </script>
+
+</body>
+</html>
